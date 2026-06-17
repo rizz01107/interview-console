@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Session Report — Interview Console{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-head">
+    <span class="eyebrow">// session #{{ session.id }} · {{ session.session_type }} · report</span>
+    <h1>Overall score: {{ session.overall_score }} / 10</h1>
+  </div>
+
+  <div class="console-card summary-card">
+    <strong>Coach summary</strong>
+    <p>{{ session.overall_feedback }}</p>
+  </div>
+
+  <div class="qa-list">
+    {% for qa in qa_rows %}
+    <div class="console-card qa-card">
+      <div class="qa-head">
+        <span class="qa-category">{{ qa.category }}</span>
+        <span class="qa-score">{{ qa.score if qa.score is not none else '–' }}/10</span>
+      </div>
+      <div class="qa-question">{{ qa.question_text }}</div>
+      <div class="qa-answer"><strong>Your answer:</strong> {{ qa.answer_text or '(no answer)' }}</div>
+      <div class="feedback-row"><strong>Strengths</strong><ul>{% for s in qa.strengths %}<li>{{ s }}</li>{% endfor %}</ul></div>
+      <div class="feedback-row"><strong>Improve</strong><ul>{% for s in qa.improvements %}<li>{{ s }}</li>{% endfor %}</ul></div>
+      <div class="feedback-row"><strong>Ideal answer should cover</strong><ul>{% for s in qa.ideal_points %}<li>{{ s }}</li>{% endfor %}</ul></div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <a href="{{ url_for('index') }}" class="btn-primary inline-btn">Start another session</a>
+</div>
+{% endblock %}

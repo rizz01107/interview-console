@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Interview Console — Live Session{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-head">
+    <span class="eyebrow">// session #{{ session.id }} · {{ session.session_type }}</span>
+    <h1>{{ target_role }} — mock interview</h1>
+  </div>
+
+  <div class="console-layout">
+    <div class="console-card terminal">
+      <div class="terminal-bar">
+        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+        <span class="terminal-title" id="qProgress">Question 1 / -</span>
+      </div>
+      <div class="terminal-body">
+        <div class="prompt-line">
+          <span class="prompt-arrow">&gt;</span>
+          <span id="questionText" class="question-text"></span>
+        </div>
+        <textarea id="answerInput" rows="6" placeholder="Type your answer here..."></textarea>
+
+        <div id="feedbackBox" class="feedback-box hidden">
+          <div class="feedback-row">
+            <strong>Strengths</strong>
+            <ul id="strengthsList"></ul>
+          </div>
+          <div class="feedback-row">
+            <strong>Improve</strong>
+            <ul id="improvementsList"></ul>
+          </div>
+          <div class="feedback-row">
+            <strong>Ideal answer should cover</strong>
+            <ul id="idealList"></ul>
+          </div>
+        </div>
+
+        <div class="terminal-actions">
+          <button id="submitAnswerBtn" class="btn-primary">Submit answer</button>
+          <button id="nextBtn" class="btn-secondary hidden">Next question →</button>
+          <button id="finishBtn" class="btn-secondary hidden">Finish & see report</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="console-card gauge-card">
+      <div class="gauge-label">Last answer score</div>
+      <div class="gauge-wrap">
+        <svg viewBox="0 0 140 140" class="gauge-svg">
+          <circle cx="70" cy="70" r="58" class="gauge-track"></circle>
+          <circle cx="70" cy="70" r="58" class="gauge-fill" id="gaugeFill"
+                  stroke-dasharray="364" stroke-dashoffset="364"></circle>
+        </svg>
+        <div class="gauge-value" id="gaugeValue">–</div>
+      </div>
+      <div class="gauge-sub">out of 10</div>
+      <div class="session-meta">
+        <div><span class="meta-label">Answered</span><span id="answeredCount">0</span></div>
+        <div><span class="meta-label">Avg score</span><span id="avgScore">–</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const questions = {{ questions_json | safe }};
+const sessionId = {{ session.id }};
+let currentIndex = 0;
+let scores = [];
+
+const qText = document.getElementById('questionText');
+const qProgress = document.getElementById('qProgress');
+const answerInput = document.getElementById('answerInput');
+const submitBtn = document.getElementById('submitAnswerBtn');
+const nextBtn = document.getElementById('nextBtn');
+const finishBtn = document.getElementById('finishBtn');
+const feedbackBox = document.getElementById('feedbackBox');
+const gaugeFill = document.getElementById('gaugeFill');
+const gaugeValue = document.getElementById('gaugeValue');
+
+function renderQuestion() {
+  const q = questions[currentIndex];
+  qText.textContent = q.question_text;
+  qProgress.textContent = `Question ${currentIndex + 1} / ${questions.length}`;
+  answerInput.value = '';
+  answerInput.disabled = false;
+  feedbackBox.classList.add('hidden');
+  submitBtn.classList.remove('hidden');
+  nextBtn.classList.add('hidden');
+  finishBtn.classList.add('hidden');
+}
+
+function setGauge(score) {
+  const pct = Math.max(0, Math.min(10, score)) / 10;
+  const circumference = 364;
+  gaugeFill.style.strokeDashoffset = circumference - (circumference * pct);
+  gaugeValue.textContent = score;
+}
+
+function updateSessionMeta() {
+  document.getElementById('answeredCount').textContent = scores.length;
+  const avg = scores.length ? (scores.reduce((a,b) => a+b, 0) / scores.length).toFixed(1) : '–';
+  document.getElementById('avgScore').textContent = avg;
+}
+
+submitBtn.addEventListener('click', async () => {
+  const q = questions[currentIndex];
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Evaluating...';
+
+  try {
+    const res = await fetch('/api/answer', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({question_id: q.id, answer_text: answerInput.value})
+    });
+    const data = await res.json();
+    if (data.error) { alert('Error: ' + data.error); submitBtn.disabled = false; submitBtn.textContent = 'Submit answer'; return; }
+
+    scores.push(data.score);
+    setGauge(data.score);
+    updateSessionMeta();
+
+    document.getElementById('strengthsList').innerHTML = (data.strengths || []).map(s => `<li>${s}</li>`).join('');
+    document.getElementById('improvementsList').innerHTML = (data.improvements || []).map(s => `<li>${s}</li>`).join('');
+    document.getElementById('idealList').innerHTML = (data.ideal_answer_points || []).map(s => `<li>${s}</li>`).join('');
+    feedbackBox.classList.remove('hidden');
+
+    answerInput.disabled = true;
+    submitBtn.classList.add('hidden');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit answer';
+
+    if (currentIndex < questions.length - 1) {
+      nextBtn.classList.remove('hidden');
+    } else {
+      finishBtn.classList.remove('hidden');
+    }
+  } catch (e) {
+    alert('Request failed: ' + e);
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit answer';
+  }
+});
+
+nextBtn.addEventListener('click', () => {
+  currentIndex += 1;
+  renderQuestion();
+});
+
+finishBtn.addEventListener('click', async () => {
+  finishBtn.disabled = true;
+  finishBtn.textContent = 'Generating report...';
+  const res = await fetch(`/api/finish/${sessionId}`, {method: 'POST'});
+  const data = await res.json();
+  if (data.redirect) window.location.href = data.redirect;
+});
+
+renderQuestion();
+</script>
+{% endblock %}

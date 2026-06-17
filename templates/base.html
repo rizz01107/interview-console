@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Interview Console{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">&gt;_</span>
+      <span class="brand-text">Interview<br>Console</span>
+    </div>
+    <nav class="nav">
+      <a href="{{ url_for('index') }}" class="nav-link {% if request.path == '/' %}active{% endif %}">
+        <span class="nav-num">01</span> New Session
+      </a>
+      <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.path == '/dashboard' %}active{% endif %}">
+        <span class="nav-num">02</span> Dashboard
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      {% if gemini_configured %}
+      <span class="status-dot"></span> Gemini connected
+      {% else %}
+      <span class="status-dot offline"></span> Gemini key missing
+      {% endif %}
+    </div>
+  </aside>
+  <main class="main">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+</body>
+</html>

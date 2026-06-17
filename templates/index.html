@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}New Session — Interview Console{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-head">
+    <span class="eyebrow">// new session</span>
+    <h1>Run a mock interview against your own resume.</h1>
+    <p class="subhead">Upload your resume, pick a target role and a round type. The console reads your skills and projects, then builds questions around them — not generic ones.</p>
+  </div>
+
+  {% if error %}
+  <div class="alert">{{ error }}</div>
+  {% endif %}
+
+  <form class="console-card setup-form" action="{{ url_for('start_session') }}" method="POST" enctype="multipart/form-data" id="setupForm">
+    <div class="field">
+      <label>Target role</label>
+      <input type="text" name="target_role" placeholder="e.g. Jr. AI/ML Engineer" value="AI/ML Engineer" required>
+    </div>
+
+    <div class="field">
+      <label>Round type</label>
+      <div class="toggle-group">
+        <label class="toggle-option">
+          <input type="radio" name="session_type" value="behavioral" checked>
+          <span>Behavioral</span>
+        </label>
+        <label class="toggle-option">
+          <input type="radio" name="session_type" value="technical">
+          <span>Technical (DSA + ML)</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Resume (PDF)</label>
+      <input type="file" name="resume_file" accept=".pdf">
+    </div>
+
+    <div class="field">
+      <label>...or paste resume text instead</label>
+      <textarea name="resume_text" rows="5" placeholder="Paste resume text here if you don't have a PDF handy"></textarea>
+    </div>
+
+    <button type="submit" class="btn-primary" id="submitBtn">
+      <span class="btn-prompt">$</span> start_interview
+    </button>
+  </form>
+</div>
+
+<script>
+document.getElementById('setupForm').addEventListener('submit', function() {
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="btn-prompt">$</span> analyzing_resume...';
+});
+</script>
+{% endblock %}
