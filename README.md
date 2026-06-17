@@ -73,3 +73,7 @@ data/interview_prep.db     SQLite database (created automatically on first run)
   whichever profile they were created under.
 - The technical round evaluates explanations/approach, not by executing code — Gemini
   judges correctness and reasoning from what you type.
+
+## Developer
+
+**Muhammad Rizwan**
